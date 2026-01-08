@@ -3,37 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>葵粉動起來</title> <!-- 這裡修改連結名稱 -->
+    
+    <!-- 修改連結預覽名稱 -->
+    <title>葵粉動起來</title>
+    <meta property="og:title" content="葵粉動起來">
+    <meta property="og:description" content="上傳打卡截圖，輕鬆累積點數換好禮！">
+    <meta property="og:type" content="website">
+    <!-- 如果你有活動封面圖，可以把網址放在下面這裡 -->
+    <meta property="og:image" content="https://via.placeholder.com/500x250/06C755/ffffff?text=葵粉動起來">
+
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <style>
-        :root { --line-green: #06C755; --soft-green: #e8f5e9; --accent-gold: #FFD700; }
-        body { font-family: 'PingFang TC', sans-serif; background-color: #f0f2f5; margin: 0; color: #333; }
+        :root { --line-green: #06C755; --soft-green: #e8f5e9; }
+        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background-color: #f0f2f5; margin: 0; color: #333; }
         
-        /* 頂部區域 */
         .header { background: linear-gradient(135deg, var(--line-green), #05a346); padding: 40px 20px; text-align: center; color: white; border-bottom-left-radius: 40px; border-bottom-right-radius: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
         .avatar { width: 85px; height: 85px; border-radius: 50%; border: 4px solid rgba(255,255,255,0.3); margin-bottom: 12px; }
         .points-val { font-size: 56px; font-weight: 800; margin: 5px 0; }
         
-        /* 主容器 */
         .container { max-width: 450px; margin: -30px auto 40px; padding: 0 20px; }
         .card { background: white; border-radius: 25px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 20px; }
         
-        /* 獎品進度條樣式 */
-        .reward-item { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #eee; }
-        .reward-item:last-child { border-bottom: none; }
-        .reward-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-weight: bold; }
-        .progress-bg { background: #eee; height: 12px; border-radius: 10px; overflow: hidden; position: relative; }
-        .progress-fill { background: linear-gradient(90deg, #4caf50, var(--line-green)); height: 100%; border-radius: 10px; transition: width 1s ease-out; }
-        .points-needed { font-size: 12px; color: #888; margin-top: 5px; text-align: right; }
-
-        /* 上傳區域 */
+        /* 上傳區域 (現在在第一塊) */
         .upload-area { text-align: center; }
-        .status-box { font-size: 13px; color: #666; margin: 15px 0; padding: 10px; background: var(--soft-green); border-radius: 10px; }
+        .status-box { font-size: 13px; color: #666; margin: 15px 0; padding: 12px; background: var(--soft-green); border-radius: 12px; border: 1px solid #d4edda; }
         .btn-main { background: #333; color: white; border: none; padding: 18px; width: 100%; border-radius: 15px; font-size: 17px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-submit { background: var(--line-green); margin-top: 15px; display: none; box-shadow: 0 5px 15px rgba(6,199,85,0.3); }
         #preview { width: 100%; border-radius: 15px; margin-top: 15px; display: none; }
+
+        /* 獎品清單區 */
+        .reward-item { margin-bottom: 25px; }
+        .reward-img { width: 100%; height: 150px; object-fit: cover; border-radius: 15px; margin-bottom: 10px; background: #eee; }
+        .reward-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-weight: bold; }
+        .progress-bg { background: #eee; height: 12px; border-radius: 10px; overflow: hidden; }
+        .progress-fill { background: linear-gradient(90deg, #4caf50, var(--line-green)); height: 100%; transition: width 1s ease-out; }
     </style>
 </head>
 <body>
@@ -46,7 +52,21 @@
 </div>
 
 <div class="container">
-    <!-- 獎品進度條區 -->
+    <!-- 1. 上傳打卡區 (移到最上方) -->
+    <div class="card upload-area">
+        <h3 style="margin-top:0; font-size:18px; text-align: left;">
+            <i class="fas fa-camera-retro" style="color: #06C755;"></i> 上傳打卡
+        </h3>
+        <div id="status" class="status-box">上傳截圖，自動集點</div>
+        <input type="file" id="file-input" accept="image/*" style="display:none">
+        <button class="btn-main" onclick="document.getElementById('file-input').click()">
+            <i class="fas fa-image"></i> 選取截圖
+        </button>
+        <img id="preview">
+        <button id="submit-btn" class="btn-main btn-submit">🚀 確認送出打卡</button>
+    </div>
+
+    <!-- 2. 獎品預覽區 (移到下方) -->
     <div class="card">
         <h3 style="margin-top:0; font-size:18px; display:flex; align-items:center; gap:8px;">
             <i class="fas fa-gift" style="color: #ff4757;"></i> 獎品兌換進度
@@ -54,17 +74,6 @@
         <div id="rewards-list">
             <p style="color:#888; font-size:14px;">讀取獎品中...</p>
         </div>
-    </div>
-
-    <!-- 上傳打卡區 -->
-    <div class="card upload-area">
-        <div id="status" class="status-box">上傳今日截圖，領取新點數！</div>
-        <input type="file" id="file-input" accept="image/*" style="display:none">
-        <button class="btn-main" onclick="document.getElementById('file-input').click()">
-            <i class="fas fa-camera"></i> 選取對話截圖
-        </button>
-        <img id="preview">
-        <button id="submit-btn" class="btn-main btn-submit">🚀 確認送出打卡</button>
     </div>
 </div>
 
@@ -100,8 +109,11 @@ function renderRewards(rewards) {
     list.innerHTML = "";
     rewards.forEach(r => {
         let percent = Math.min((currentPoints / r.required) * 100, 100);
+        // 如果有圖片網址就顯示圖片
+        let imgHtml = r.image ? `<img src="${r.image}" class="reward-img">` : "";
         list.innerHTML += `
             <div class="reward-item">
+                ${imgHtml}
                 <div class="reward-info">
                     <span>${r.name}</span>
                     <span style="color:var(--line-green)">${currentPoints} / ${r.required}</span>
@@ -109,15 +121,12 @@ function renderRewards(rewards) {
                 <div class="progress-bg">
                     <div class="progress-fill" style="width: ${percent}%"></div>
                 </div>
-                <div class="points-needed">
-                    ${percent >= 100 ? '✅ 已達成目標' : `還差 ${r.required - currentPoints} 點`}
-                </div>
             </div>
         `;
     });
 }
 
-// 圖片處理邏輯 (保持之前穩定版的內容)
+// ... 圖片處理邏輯 (與前版相同) ...
 document.getElementById('file-input').onchange = function(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -126,7 +135,7 @@ document.getElementById('file-input').onchange = function(e) {
         document.getElementById('preview').src = ev.target.result;
         document.getElementById('preview').style.display = 'block';
         document.getElementById('submit-btn').style.display = 'flex';
-        document.getElementById('status').innerText = "圖片已就緒，請核對後送出";
+        document.getElementById('status').innerText = "圖片已就緒，請送出";
     };
     reader.readAsDataURL(file);
 };
@@ -135,7 +144,7 @@ document.getElementById('submit-btn').onclick = async function() {
     const btn = this;
     const status = document.getElementById('status');
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 辨識中...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 分析中...';
 
     const img = new Image();
     img.src = document.getElementById('preview').src;
@@ -161,23 +170,19 @@ document.getElementById('submit-btn').onclick = async function() {
     try {
         const { data: { text } } = await Tesseract.recognize(canvas.toDataURL(), 'chi_tra');
         const cleanText = text.replace(/\s+/g, "");
-        
         const response = await fetch(GAS_URL, {
             method: "POST",
             body: JSON.stringify({ userId, userName, rawText: cleanText, date: new Date().toLocaleDateString('en-CA') })
         });
-
         const result = await response.text();
         alert(result);
-        
-        // 重置
         document.getElementById('preview').style.display = 'none';
         btn.style.display = 'none';
         btn.disabled = false;
         btn.innerHTML = '🚀 確認送出打卡';
-        fetchData(); // 重新整理資料與進度條
+        fetchData(); 
     } catch (err) {
-        alert("連線錯誤，請重試");
+        alert("失敗");
         btn.disabled = false;
         btn.innerHTML = '🚀 確認送出打卡';
     }
