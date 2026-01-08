@@ -9,36 +9,19 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --line-green: #06C755; --bg-gray: #F0F2F5; }
-        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background-color: var(--bg-gray); margin: 0; display: flex; justify-content: center; min-height: 100vh; }
-        
-        .app-container { width: 100%; max-width: 450px; background: white; min-height: 100vh; position: relative; padding-bottom: 50px; }
-        
-        /* 頂部個人資料區 */
-        .profile-section { background: var(--line-green); padding: 40px 20px; text-align: center; color: white; border-radius: 0 0 30px 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .avatar { width: 90px; height: 90px; border-radius: 50%; border: 4px solid rgba(255,255,255,0.3); margin-bottom: 10px; object-fit: cover; }
-        .user-name { font-size: 20px; font-weight: bold; margin-bottom: 5px; }
-        .level-badge { background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 13px; }
-
-        /* 點數顯示區 */
-        .points-card { background: white; width: 85%; margin: -30px auto 20px; border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; }
-        .points-label { color: #888; font-size: 14px; letter-spacing: 1px; }
-        .points-value { font-size: 64px; font-weight: 800; color: #333; margin: 10px 0; font-family: 'Arial Rounded MT Bold', sans-serif; }
-        .points-unit { font-size: 18px; color: #666; margin-left: 5px; }
-
-        /* 操作區 */
+        body { font-family: 'PingFang TC', sans-serif; background-color: var(--bg-gray); margin: 0; display: flex; justify-content: center; min-height: 100vh; }
+        .app-container { width: 100%; max-width: 450px; background: white; min-height: 100vh; padding-bottom: 50px; }
+        .profile-section { background: var(--line-green); padding: 40px 20px; text-align: center; color: white; border-radius: 0 0 30px 30px; }
+        .avatar { width: 80px; height: 80px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.3); margin-bottom: 10px; object-fit: cover; }
+        .user-name { font-size: 18px; font-weight: bold; }
+        .points-card { background: white; width: 85%; margin: -30px auto 20px; border-radius: 20px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
+        .points-value { font-size: 50px; font-weight: 800; color: #333; margin: 5px 0; }
         .action-section { padding: 0 25px; }
-        .status-box { background: #F8F9FA; padding: 15px; border-radius: 12px; font-size: 14px; color: #666; margin-bottom: 15px; min-height: 20px; border: 1px dashed #DDD; }
-        
-        .upload-btn { background: #333; color: white; padding: 18px; border-radius: 15px; border: none; width: 100%; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.3s; }
-        .upload-btn:active { transform: scale(0.98); }
-        
-        .submit-btn { background: var(--line-green); color: white; padding: 18px; border-radius: 15px; border: none; width: 100%; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 15px; box-shadow: 0 5px 15px rgba(6,199,85,0.3); }
-        .submit-btn:disabled { background: #CCC; box-shadow: none; }
-
-        #preview { width: 100%; border-radius: 15px; margin-top: 20px; display: none; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        
-        /* 載入動畫 */
-        .loading-spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; }
+        .status-box { background: #F8F9FA; padding: 12px; border-radius: 10px; font-size: 13px; color: #666; margin-bottom: 15px; border: 1px dashed #DDD; min-height: 18px; }
+        .upload-btn { background: #333; color: white; padding: 15px; border-radius: 12px; border: none; width: 100%; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .submit-btn { background: var(--line-green); color: white; padding: 15px; border-radius: 12px; border: none; width: 100%; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        #preview { width: 100%; border-radius: 15px; margin-top: 15px; display: none; }
+        .loading-spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s infinite; vertical-align: middle; margin-right: 5px; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
@@ -46,25 +29,19 @@
 
 <div class="app-container">
     <div class="profile-section">
-        <img id="user-avatar" class="avatar" src="https://via.placeholder.com/90">
+        <img id="user-avatar" class="avatar" src="">
         <div id="display-name" class="user-name">載入中...</div>
-        <span id="user-level" class="level-badge">會員</span>
     </div>
 
     <div class="points-card">
-        <div class="points-label">目前累積點數</div>
+        <div style="color:#888; font-size:12px;">目前累積點數</div>
         <div class="points-value" id="points-display">--</div>
-        <div class="points-unit">Points</div>
     </div>
 
     <div class="action-section">
-        <div id="status" class="status-box">點擊下方按鈕上傳截圖領取點數</div>
-        
+        <div id="status" class="status-box">請選取打卡截圖</div>
         <input type="file" id="file-input" accept="image/*" style="display:none">
-        <button class="upload-btn" onclick="document.getElementById('file-input').click()">
-            <i class="fas fa-camera"></i> 選取對話截圖
-        </button>
-
+        <button id="upload-trigger" class="upload-btn" onclick="document.getElementById('file-input').click()">📸 選取對話截圖</button>
         <img id="preview">
         <button id="submit-btn" class="submit-btn" style="display:none">確認送出打卡</button>
     </div>
@@ -78,39 +55,30 @@ let userId = "", userName = "";
 
 async function init() {
     await liff.init({ liffId: LIFF_ID });
-    if (!liff.isLoggedIn()) {
-        liff.login();
-    } else {
+    if (!liff.isLoggedIn()) { liff.login(); } 
+    else {
         const profile = await liff.getProfile();
         userId = profile.userId;
         userName = profile.displayName;
-        
         document.getElementById("display-name").innerText = userName;
-        document.getElementById("user-avatar").src = profile.pictureUrl || "https://via.placeholder.com/90";
-        
-        fetchUserData(); // 抓取點數
+        document.getElementById("user-avatar").src = profile.pictureUrl;
+        fetchUserData();
     }
 }
 
 async function fetchUserData() {
-    try {
-        const response = await fetch(`${GAS_URL}?userId=${userId}`);
-        const data = await response.json();
-        document.getElementById("points-display").innerText = data.points;
-        document.getElementById("user-level").innerText = data.level;
-    } catch (e) {
-        console.error("無法抓取點數");
-    }
+    const res = await fetch(`${GAS_URL}?userId=${userId}`);
+    const data = await res.json();
+    document.getElementById("points-display").innerText = data.points;
 }
 
 document.getElementById('file-input').onchange = function(e) {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = function(event) {
-        const img = document.getElementById('preview');
-        img.src = event.target.result;
-        img.style.display = 'block';
+    reader.onload = function(ev) {
+        document.getElementById('preview').src = ev.target.result;
+        document.getElementById('preview').style.display = 'block';
         document.getElementById('submit-btn').style.display = 'block';
         document.getElementById('status').innerText = "圖片已就緒，請核對後送出";
     };
@@ -118,12 +86,10 @@ document.getElementById('file-input').onchange = function(e) {
 };
 
 document.getElementById('submit-btn').onclick = async function() {
-    const status = document.getElementById('status');
     const btn = this;
-    
+    const status = document.getElementById('status');
     btn.disabled = true;
     btn.innerHTML = '<div class="loading-spinner"></div> 辨識中...';
-    status.innerText = "🔍 正在分析圖片內容，請稍候...";
 
     const img = new Image();
     img.src = document.getElementById('preview').src;
@@ -131,51 +97,48 @@ document.getElementById('submit-btn').onclick = async function() {
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    const scale = 3; 
-    const cropWidth = img.width * 0.5;
+    const scale = 3.5; // 再稍微放大一點點
+    const cropWidth = img.width * 0.55; // 稍微多切一點右側空間
     canvas.width = cropWidth * scale;
     canvas.height = img.height * scale;
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(img, img.width * 0.5, 0, cropWidth, img.height, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, img.width * 0.45, 0, cropWidth, img.height, 0, 0, canvas.width, canvas.height);
 
+    // 強力黑白處理（優化綠色對話框）
     let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    let p = imgData.data;
-    for (let i = 0; i < p.length; i += 4) {
-        let avg = (p[i] + p[i+1] + p[i+2]) / 3;
-        let v = avg < 165 ? 0 : 255;
-        p[i] = p[i+1] = p[i+2] = v;
+    let d = imgData.data;
+    for (let i = 0; i < d.length; i += 4) {
+        let avg = (d[i] + d[i+1] + d[i+2]) / 3;
+        // 降低門檻值，讓淺色背景更容易變白，黑字更黑
+        let v = avg < 140 ? 0 : 255; 
+        d[i] = d[i+1] = d[i+2] = v;
     }
     ctx.putImageData(imgData, 0, 0);
 
     try {
         const { data: { text } } = await Tesseract.recognize(canvas.toDataURL(), 'chi_tra');
         const cleanText = text.replace(/\s+/g, "");
-
-        status.innerText = "🚀 正在同步資料庫...";
-
+        
         const response = await fetch(GAS_URL, {
             method: "POST",
-            body: JSON.stringify({
-                userId: userId,
-                userName: userName,
-                rawText: cleanText,
-                date: new Date().toLocaleDateString('en-CA')
-            })
+            body: JSON.stringify({ userId, userName, rawText: cleanText, date: new Date().toLocaleDateString('en-CA') })
         });
 
         const result = await response.text();
         alert(result);
         
-        // 成功後重新整理點數
-        fetchUserData();
-        
+        // --- 重置介面，允許連續操作 ---
         document.getElementById('preview').style.display = 'none';
+        document.getElementById('preview').src = "";
         btn.style.display = 'none';
+        btn.disabled = false;
         btn.innerHTML = '確認送出打卡';
-        status.innerText = result;
+        document.getElementById('file-input').value = ""; // 清空檔案選擇器
+        document.getElementById('status').innerText = "請選取下一張截圖";
         
+        fetchUserData(); // 更新總點數
     } catch (err) {
-        alert("連線失敗：" + err);
+        alert("錯誤：" + err);
         btn.disabled = false;
         btn.innerHTML = '確認送出打卡';
     }
