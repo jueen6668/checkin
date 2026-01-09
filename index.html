@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>葵粉動起來</title>
+    <!-- 使用更快速的 CDN -->
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <script src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --line-green: #06C755; --bg-gray: #F4F6F9; }
@@ -22,6 +23,8 @@
         .rewards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
         .reward-card { background: #fff; border: 1px solid #eee; border-radius: 15px; padding: 10px; text-align: center; }
         .reward-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 10px; margin-bottom: 5px; background: #f9f9f9; }
+        .progress-container { margin-top: 5px; }
+        .progress-info { display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 3px; font-weight: bold; color: #666; }
         .progress-bg { background: #eee; height: 6px; border-radius: 3px; overflow: hidden; }
         .progress-fill { background: var(--line-green); height: 100%; width: 0%; transition: width 0.5s; }
         .loading-spin { animation: spin 1s infinite linear; }
@@ -31,22 +34,22 @@
 <body>
 
 <div class="header">
-    <img id="user-avatar" class="avatar" src="https://via.placeholder.com/80">
-    <div id="user-name">連線中...</div>
+    <img id="user-avatar" class="avatar" src="https://via.placeholder.com/80?text=VIP">
+    <div id="user-name">載入中...</div>
     <div class="points-val" id="points-display">--</div>
 </div>
 
 <div class="container">
     <div class="card">
-        <div id="status" class="status-box">正在啟動 AI 引擎...</div>
+        <div id="status" class="status-box">連線中...</div>
         <input type="file" id="file-input" accept="image/*" style="display:none">
-        <button id="upload-btn" class="btn-main" onclick="document.getElementById('file-input').click()" disabled>請稍候...</button>
+        <button id="upload-btn" class="btn-main" onclick="document.getElementById('file-input').click()" disabled>系統準備中</button>
         <img id="preview">
         <button id="submit-btn" class="btn-main btn-submit">確認送出打卡</button>
     </div>
     <div class="card">
         <div style="font-weight:bold; margin-bottom:10px;"><i class="fas fa-gift"></i> VIP集點換好禮</div>
-        <div id="rewards-grid" class="rewards-grid">載入中...</div>
+        <div id="rewards-grid" class="rewards-grid">載入獎品中...</div>
     </div>
 </div>
 
@@ -54,17 +57,22 @@
 const LIFF_ID = "2008852092-FWAMmdWd"; 
 const GAS_URL = "https://script.google.com/macros/s/AKfycbydAUJv9hkMsWFuFNTMoSQ61Md67yE-LyjTh4bg8U97NPgyG2ZvkdY_flflAcBxd4ol/exec"; 
 
-let userId = "", userName = "", worker = null;
+let userId = "", userName = "", worker = null, currentPoints = 0;
 
-// 1. 初始化系統 (預加載模式)
-window.onload = async function() {
+// 頁面加載後立刻執行，不等待 AI 下載
+window.onload = function() {
+    initSystem();
+};
+
+async function initSystem() {
     const status = document.getElementById("status");
+    
+    // 1. 先背景啟動 AI 引擎 (不加 await，讓它自己跑)
+    prepareOCR();
+
+    // 2. 啟動 LIFF (這很快)
     try {
-        // 同步執行：LIFF 與 AI 引擎同時加載
-        const liffTask = liff.init({ liffId: LIFF_ID });
-        const ocrTask = prepareOCR();
-        
-        await liffTask;
+        await liff.init({ liffId: LIFF_ID });
         if (!liff.isLoggedIn()) { liff.login(); return; }
         
         const profile = await liff.getProfile();
@@ -73,39 +81,63 @@ window.onload = async function() {
         document.getElementById("user-name").innerText = userName;
         document.getElementById("user-avatar").src = profile.pictureUrl || "";
         
-        fetchData(); // 抓點數
-        
-        await ocrTask; // 等待 AI 引擎準備好
-        document.getElementById("upload-btn").disabled = false;
-        document.getElementById("upload-btn").innerText = "選取截圖照片";
-        status.innerText = "系統已就緒，請上傳截圖";
+        // 3. 抓取點數 (非同步)
+        fetchData();
         
     } catch (e) {
-        status.innerText = "啟動失敗，請重新整理";
-        console.error(e);
+        status.innerText = "LIFF 連線失敗";
     }
-};
+}
 
-// 預加載 AI 引擎，避免每次都下載
 async function prepareOCR() {
-    worker = await Tesseract.createWorker({
-        logger: m => { if(m.status === 'recognizing') document.getElementById("status").innerText = `辨識中: ${Math.round(m.progress * 100)}%`; }
-    });
-    await worker.loadLanguage('chi_tra');
-    await worker.initialize('chi_tra');
-    await worker.setParameters({ tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK });
+    try {
+        worker = await Tesseract.createWorker({
+            logger: m => { 
+                if(m.status === 'recognizing') {
+                    document.getElementById("status").innerText = `辨識中: ${Math.round(m.progress * 100)}%`;
+                }
+            }
+        });
+        await worker.loadLanguage('chi_tra');
+        await worker.initialize('chi_tra');
+        await worker.setParameters({ tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK });
+        
+        // AI 準備好後才開啟按鈕
+        document.getElementById("upload-btn").disabled = false;
+        document.getElementById("upload-btn").innerText = "選取截圖照片";
+        document.getElementById("status").innerText = "系統就緒，請上傳截圖";
+    } catch (err) {
+        document.getElementById("status").innerText = "AI 引擎加載失敗，請刷新";
+    }
 }
 
 async function fetchData() {
-    const res = await fetch(`${GAS_URL}?userId=${userId}`);
-    const data = await res.json();
-    document.getElementById("points-display").innerText = data.points;
-    const grid = document.getElementById("rewards-grid");
-    grid.innerHTML = "";
-    data.rewards.forEach(r => {
-        let p = Math.min((data.points / r.required) * 100, 100);
-        grid.innerHTML += `<div class="reward-card"><div style="font-size:12px;height:32px;overflow:hidden;">${r.name}</div><img src="${r.image || 'https://via.placeholder.com/150'}" class="reward-img"><div class="progress-bg"><div class="progress-fill" style="width:${p}%"></div></div></div>`;
-    });
+    try {
+        const res = await fetch(`${GAS_URL}?userId=${userId}`);
+        const data = await res.json();
+        currentPoints = data.points;
+        document.getElementById("points-display").innerText = currentPoints;
+        
+        const grid = document.getElementById("rewards-grid");
+        grid.innerHTML = "";
+        data.rewards.forEach(r => {
+            let p = Math.min((currentPoints / r.required) * 100, 100);
+            grid.innerHTML += `
+                <div class="reward-card">
+                    <div style="font-size:12px;height:32px;overflow:hidden;font-weight:bold;">${r.name}</div>
+                    <img src="${r.image || 'https://via.placeholder.com/150'}" class="reward-img">
+                    <div class="progress-container">
+                        <div class="progress-info">
+                            <span>${currentPoints}點</span>
+                            <span>目標${r.required}</span>
+                        </div>
+                        <div class="progress-bg"><div class="progress-fill" style="width:${p}%"></div></div>
+                    </div>
+                </div>`;
+        });
+    } catch (e) {
+        console.log("Fetch error");
+    }
 }
 
 document.getElementById('file-input').onchange = function(e) {
@@ -115,7 +147,7 @@ document.getElementById('file-input').onchange = function(e) {
         document.getElementById('preview').src = ev.target.result;
         document.getElementById('preview').style.display = 'block';
         document.getElementById('submit-btn').style.display = 'block';
-        document.getElementById('status').innerText = "圖片已就緒";
+        document.getElementById("status").innerText = "圖片已就緒，請送出";
     };
     reader.readAsDataURL(e.target.files[0]);
 };
@@ -133,11 +165,10 @@ document.getElementById('submit-btn').onclick = async function() {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     
-    // 優化：限制原圖大小，避免大圖導致當機
     let w = img.width, h = img.height;
-    if (w > 1000) { h = h * (1000/w); w = 1000; }
+    if (w > 1200) { h = h * (1200/w); w = 1200; }
     
-    const scale = 3; 
+    const scale = 3.2; 
     const cw = w * 0.55; 
     canvas.width = cw * scale;
     canvas.height = h * scale;
@@ -154,27 +185,28 @@ document.getElementById('submit-btn').onclick = async function() {
 
     try {
         const { data: { text } } = await worker.recognize(canvas.toDataURL());
-        status.innerText = "正在同步資料...";
+        status.innerText = "資料同步中...";
         
         const response = await fetch(GAS_URL, {
             method: "POST",
             body: JSON.stringify({ userId, userName, rawText: text.replace(/\s+/g, ""), date: new Date().toLocaleDateString('en-CA') })
         });
 
-        alert(await response.text());
+        const result = await response.text();
+        alert(result);
         
-        // --- 關鍵：不使用 Reload，手動重置 ---
+        // 重置介面，不重整網頁
         document.getElementById('preview').style.display = 'none';
         document.getElementById('preview').src = '';
         btn.style.display = 'none';
         btn.disabled = false;
         btn.innerHTML = '確認送出打卡';
         document.getElementById('file-input').value = "";
-        status.innerText = "完成！可繼續打卡下一張";
-        fetchData(); // 重新讀取點數
+        status.innerText = "完成！可繼續上傳下一張";
+        fetchData(); 
         
     } catch (err) {
-        alert("系統忙碌，請重試");
+        alert("系統逾時，請再試一次");
         btn.disabled = false;
         btn.innerHTML = '確認送出打卡';
     }
