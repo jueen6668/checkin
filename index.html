@@ -35,7 +35,7 @@
         .reward-img { width: 100%; height: 100%; object-fit: cover; }
         .progress-bg { background: #eee; height: 8px; border-radius: 5px; overflow: hidden; }
         .progress-fill { background: var(--line-green); height: 100%; transition: width 0.8s; width: 0%; }
-        .loading-spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s infinite; margin-right: 8px; vertical-align: middle; }
+        .loading-spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s infinite; vertical-align: middle; margin-right: 8px; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
@@ -51,7 +51,7 @@
 <div class="container">
     <div class="card upload-area">
         <div class="section-title"><i class="fas fa-camera" style="color:var(--line-green)"></i> 截圖集點</div>
-        <div id="status" class="status-box">連線中...</div>
+        <div id="status" class="status-box">請上傳對話截圖</div>
         <input type="file" id="file-input" accept="image/*" style="display:none">
         <button id="upload-btn" class="btn-main" onclick="document.getElementById('file-input').click()" disabled>載入中...</button>
         <img id="preview">
@@ -65,6 +65,7 @@
 </div>
 
 <script>
+// --- [填入正確資訊] ---
 const LIFF_ID = "2008852092-FWAMmdWd"; 
 const GAS_URL = "https://script.google.com/macros/s/AKfycbydAUJv9hkMsWFuFNTMoSQ61Md67yE-LyjTh4bg8U97NPgyG2ZvkdY_flflAcBxd4ol/exec"; 
 
@@ -84,7 +85,7 @@ async function init() {
             document.getElementById("status").innerText = "請上傳對話截圖";
             fetchData();
         }
-    } catch (e) { alert("初始化失敗"); }
+    } catch (e) { document.getElementById("status").innerText = "初始化失敗"; }
 }
 
 async function fetchData() {
@@ -124,17 +125,12 @@ document.getElementById('submit-btn').onclick = async function() {
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    
-    // 使用之前最準確的參數：3.5 倍放大
     const scale = 3.5;
     const cropWidth = img.width * 0.55;
-    canvas.width = cropWidth * scale;
-    canvas.height = img.height * scale;
-    
+    canvas.width = cropWidth * scale; canvas.height = img.height * scale;
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(img, img.width * 0.45, 0, cropWidth, img.height, 0, 0, canvas.width, canvas.height);
 
-    // 使用之前最準確的對比度門檻：145
     let id = ctx.getImageData(0, 0, canvas.width, canvas.height);
     for (let i = 0; i < id.data.length; i += 4) {
         let v = (id.data[i] + id.data[i+1] + id.data[i+2]) / 3 < 145 ? 0 : 255;
@@ -143,14 +139,13 @@ document.getElementById('submit-btn').onclick = async function() {
     ctx.putImageData(id, 0, 0);
 
     try {
-        // 回歸最單純的辨識方式，只用 chi_tra (繁體中文)
         const { data: { text } } = await Tesseract.recognize(canvas.toDataURL(), 'chi_tra');
         const response = await fetch(GAS_URL, {
             method: "POST",
             body: JSON.stringify({ userId, userName, rawText: text.replace(/\s+/g, ""), date: new Date().toLocaleDateString('en-CA') })
         });
         alert(await response.text());
-        location.reload(); // 成功後自動刷新，確保連續操作正常
+        location.reload(); 
     } catch (err) {
         alert("失敗");
         btn.disabled = false;
