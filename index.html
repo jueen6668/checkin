@@ -4,45 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>葵粉動起來</title>
-    
     <meta property="og:title" content="葵粉動起來">
     <meta property="og:description" content="VIP集點換好禮">
     <meta property="og:image" content="https://i.postimg.cc/WbcnW6XV/002-kui-fen-dong-qi-lai-vivipic-(3).jpg">
-
-    <!-- 僅載入 LINE SDK -->
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-
+    <script src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
     <style>
         :root { --line-green: #06C755; --kewi-pink: #FF85A2; --bg-gray: #F4F6F9; }
         body, html { margin: 0; padding: 0; background: var(--bg-gray); font-family: -apple-system, sans-serif; height: 100%; width: 100%; }
-        
-        /* 可愛載入畫面：使用不碎裂 SVG */
-        #loading-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #ffffff; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; z-index: 9999;
-        }
+        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
         .svg-heart { width: 80px; height: 80px; fill: var(--kewi-pink); animation: pulse 1.2s infinite; }
         @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
-        .loader-text { margin-top: 25px; font-size: 16px; color: #555; font-weight: bold; }
-        
-        /* 載入進度條 */
+        .loader-text { margin-top: 25px; font-size: 16px; color: #FF85A2; font-weight: bold; }
         .progress-container { width: 200px; height: 8px; background: #eee; border-radius: 10px; margin-top: 15px; overflow: hidden; }
         .progress-bar { width: 0%; height: 100%; background: var(--kewi-pink); transition: width 0.3s ease; }
-
-        /* 主程式 */
         #main-app { display: none; }
         .header { background: linear-gradient(135deg, var(--line-green), #05a346); padding: 35px 20px; text-align: center; color: white; border-bottom-left-radius: 30px; border-bottom-right-radius: 30px; }
-        .avatar { width: 70px; height: 70px; border-radius: 50%; border: 2px solid #fff; object-fit: cover; margin-bottom: 8px; background: #eee; }
-        .points-val { font-size: 48px; font-weight: 800; margin: 5px 0; }
-        .container { max-width: 450px; margin: -30px auto 40px; padding: 0 15px; }
+        .avatar { width: 75px; height: 75px; border-radius: 50%; border: 3px solid #fff; object-fit: cover; margin-bottom: 8px; background: #eee; }
+        .points-val { font-size: 50px; font-weight: 800; margin: 5px 0; }
+        .container { max-width: 450px; margin: -25px auto 40px; padding: 0 15px; }
         .card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); margin-bottom: 15px; text-align: center; }
         .status-box { font-size: 13px; color: #666; margin-bottom: 12px; padding: 10px; background: #e8f5e9; border-radius: 10px; font-weight: bold; }
         .btn-main { background: #333; color: white; border: none; padding: 16px; width: 100%; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
         .btn-submit { background: var(--line-green); margin-top: 10px; display: none; }
         .rewards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .reward-card { background: #fff; border: 1px solid #eee; border-radius: 15px; padding: 10px; text-align: center; }
-        .reward-name { font-size: 11px; height: 32px; overflow: hidden; font-weight: bold; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; line-height: 1.2; }
+        .reward-card { background: #fff; border: 1px solid #eee; border-radius: 15px; padding: 10px; }
+        .reward-name { font-size: 11px; height: 32px; overflow: hidden; font-weight: bold; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; }
         .reward-img { width: 100%; aspect-ratio: 1 / 1; border-radius: 10px; object-fit: cover; margin-bottom: 8px; background: #f9f9f9; }
         .progress-info { display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 4px; font-weight: bold; color: #333; }
         .progress-bg { background: #eee; height: 7px; border-radius: 4px; overflow: hidden; }
@@ -66,11 +53,11 @@
     </div>
     <div class="container">
         <div class="card">
-            <div id="status" class="status-box">請上傳對話截圖</div>
+            <div id="status" class="status-box">請上傳您的對話截圖</div>
             <input type="file" id="file-input" accept="image/*" style="display:none">
             <button id="upload-btn" class="btn-main" onclick="document.getElementById('file-input').click()">📸 選取照片</button>
             <img id="preview">
-            <button id="submit-btn" class="btn-main btn-submit" onclick="handleSubmit()">確認送出打卡</button>
+            <button id="submit-btn" class="btn-main btn-submit" onclick="handleSubmit()">🚀 確認送出打卡</button>
         </div>
         <div class="card" style="text-align:left;">
             <div style="font-weight:bold; margin-bottom:12px;">🎁 VIP集點換好禮</div>
@@ -80,8 +67,8 @@
 </div>
 
 <script>
-    const LIFF_ID = "2008852092-FWAMmdWd"; // 確認這串沒錯
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbydAUJv9hkMsWFuFNTMoSQ61Md67yE-LyjTh4bg8U97NPgyG2ZvkdY_flflAcBxd4ol/exec"; // 確認這串沒錯
+    const LIFF_ID = "2008852092-FWAMmdWd";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbydAUJv9hkMsWFuFNTMoSQ61Md67yE-LyjTh4bg8U97NPgyG2ZvkdY_flflAcBxd4ol/exec";
     
     let userId = "", userName = "", worker = null, currentPoints = 0;
 
@@ -90,23 +77,11 @@
         if(txt) document.getElementById("ld-status").innerText = txt;
     }
 
-    function loadScript(src) {
-        return new Promise((resolve) => {
-            const s = document.createElement('script');
-            s.src = src; s.onload = resolve;
-            document.body.appendChild(s);
-        });
-    }
-
-    // 啟動保護：7秒強制開門
-    const safety = setTimeout(() => { if(userId === "") closeLoader(); }, 7000);
-
     window.onload = async function() {
         setLd(10, "連線 LINE...");
         try {
             await liff.init({ liffId: LIFF_ID });
             if (!liff.isLoggedIn()) { liff.login(); return; }
-            
             const profile = await liff.getProfile();
             userId = profile.userId; userName = profile.displayName;
             document.getElementById("user-name").innerText = userName;
@@ -116,26 +91,20 @@
             await fetchData();
 
             setLd(50, "啟動 AI 引擎...");
-            await loadScript("https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js");
-            
             worker = await Tesseract.createWorker({
-                logger: m => { if(m.status === 'loading chi_tra') setLd(50 + (m.progress * 45), `下載 AI 資源: ${Math.round(m.progress*100)}%`); }
+                logger: m => { if(m.status === 'loading chi_tra') setLd(50 + (m.progress * 45), `資源下載: ${Math.round(m.progress*100)}%`); }
             });
             await worker.loadLanguage('chi_tra');
             await worker.initialize('chi_tra');
-            await worker.setParameters({ tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK });
-
+            
             setLd(100, "準備就緒！");
-            clearTimeout(safety);
-            setTimeout(closeLoader, 400);
+            setTimeout(() => {
+                document.getElementById("loading-screen").style.display = "none";
+                document.getElementById("main-app").style.display = "block";
+            }, 400);
 
-        } catch (err) { console.error(err); closeLoader(); }
+        } catch (err) { console.error(err); document.getElementById("loading-screen").style.display = "none"; document.getElementById("main-app").style.display = "block"; }
     };
-
-    function closeLoader() {
-        document.getElementById("loading-screen").style.display = "none";
-        document.getElementById("main-app").style.display = "block";
-    }
 
     async function fetchData() {
         try {
@@ -149,7 +118,7 @@
                 let p = Math.min((currentPoints / r.required) * 100, 100);
                 grid.innerHTML += `<div class="reward-card"><div class="reward-name">${r.name}</div><div class="reward-img-container"><img src="${r.image || 'https://via.placeholder.com/150'}" class="reward-img"></div><div class="progress-info"><span>${currentPoints}點</span><span>目標${r.required}</span></div><div class="progress-bg"><div class="progress-fill" style="width:${p}%"></div></div></div>`;
             });
-        } catch (e) { console.log("Fetch error"); }
+        } catch (e) { }
     }
 
     document.getElementById('file-input').onchange = (e) => {
@@ -164,37 +133,74 @@
         reader.readAsDataURL(e.target.files[0]);
     };
 
+    // --- 高階圖像預處理函式 ---
+    function enhanceImage(img, scale) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 1. 寬容裁切：保留右側 70% 範圍，解決大字體與亂裁問題
+        const cropWidth = img.width * 0.7;
+        const startX = img.width * 0.3;
+        canvas.width = cropWidth * scale;
+        canvas.height = img.height * scale;
+        
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(img, startX, 0, cropWidth, img.height, 0, 0, canvas.width, canvas.height);
+        
+        let id = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        let data = id.data;
+
+        // 2. 自適應對比增強算法
+        // 先計算平均亮度
+        let totalBrightness = 0;
+        for (let i = 0; i < data.length; i += 4) {
+            totalBrightness += (data[i] + data[i+1] + data[i+2]) / 3;
+        }
+        let avgBrightness = totalBrightness / (data.length / 4);
+
+        // 動態調整門檻：如果圖片偏暗，降低門檻；如果偏亮，提高門檻
+        let threshold = avgBrightness < 128 ? avgBrightness * 0.8 : avgBrightness * 1.1;
+        // 限制門檻範圍在 100~180 之間最穩定
+        threshold = Math.max(100, Math.min(180, threshold));
+
+        for (let i = 0; i < data.length; i += 4) {
+            let v = (data[i] + data[i+1] + data[i+2]) / 3 < threshold ? 0 : 255;
+            data[i] = data[i+1] = data[i+2] = v;
+        }
+        
+        ctx.putImageData(id, 0, 0);
+        return canvas.toDataURL('image/png');
+    }
+
     async function handleSubmit() {
         const btn = document.getElementById("submit-btn");
-        btn.disabled = true; btn.innerHTML = '辨識中...';
-        document.getElementById("status").innerText = "🔍 雙重深度掃描中...";
-        const img = new Image(); img.src = document.getElementById('preview').src;
+        btn.disabled = true; btn.innerHTML = 'AI 掃描中...';
+        document.getElementById("status").innerText = "🔍 正在進行深度文字校對...";
+        
+        const img = new Image();
+        img.src = document.getElementById('preview').src;
         await img.decode();
+        
         try {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const runScan = async (scale) => {
-                const cw = img.width * 0.7; const sx = img.width * 0.3;
-                canvas.width = cw * scale; canvas.height = img.height * scale;
-                ctx.imageSmoothingEnabled = false;
-                ctx.drawImage(img, sx, 0, cw, img.height, 0, 0, canvas.width, canvas.height);
-                let id = ctx.getImageData(0,0,canvas.width,canvas.height);
-                for(let i=0; i<id.data.length; i+=4) {
-                    let v = (id.data[i]+id.data[i+1]+id.data[i+2])/3 < 145 ? 0 : 255;
-                    id.data[i] = id.data[i+1] = id.data[i+2] = v;
-                }
-                ctx.putImageData(id,0,0);
-                return await worker.recognize(canvas.toDataURL());
-            };
-            const r1 = await runScan(1.5);
-            const r2 = await runScan(3.2);
+            // 執行雙重掃描（不同倍率抓取不同字體大小）
+            const d1 = enhanceImage(img, 1.5);
+            const r1 = await worker.recognize(d1);
+            
+            const d2 = enhanceImage(img, 3.2);
+            const r2 = await worker.recognize(d2);
+
             const combined = (r1.data.text + " " + r2.data.text).replace(/\s+/g, "");
-            const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ userId, userName, rawText: combined, date: new Date().toLocaleDateString('en-CA') }) });
+
+            const res = await fetch(GAS_URL, {
+                method: "POST",
+                body: JSON.stringify({ userId, userName, rawText: combined, date: new Date().toLocaleDateString('en-CA') })
+            });
+
             alert(await res.text());
             document.getElementById('preview').style.display = 'none';
             btn.style.display = 'none'; btn.disabled = false; btn.innerHTML = "確認送出打卡";
             fetchData();
-        } catch (err) { alert("辨識出錯，請重試"); btn.disabled = false; }
+        } catch (err) { alert("辨識超時，請重新選取照片"); btn.disabled = false; }
     }
 </script>
 </body>
