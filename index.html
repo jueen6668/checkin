@@ -5,57 +5,72 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>葵粉動起來</title>
     
-    <!-- 預覽設定 -->
     <meta property="og:title" content="葵粉動起來">
     <meta property="og:description" content="VIP集點換好禮">
     <meta property="og:image" content="https://i.postimg.cc/jSMWWBvz/001-fang-an-tu-de-fu-ben-vivipic.jpg">
 
-    <!-- 1. 最優先載入 LIFF SDK：只有 20KB -->
+    <!-- 核心腳本：同步載入最穩 -->
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
 
     <style>
         :root { --line-green: #06C755; --kewi-pink: #FF85A2; --bg-gray: #F4F6F9; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg-gray); font-family: sans-serif; overflow: hidden; }
+        body, html { margin: 0; padding: 0; background: var(--bg-gray); font-family: -apple-system, sans-serif; }
         
-        /* 載入畫面 */
+        /* 純 CSS 愛心載入畫面 (不依賴圖示庫) */
         #loading-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #ffffff; display: flex; flex-direction: column;
             align-items: center; justify-content: center; z-index: 9999;
         }
-        .loader-heart { color: var(--kewi-pink); font-size: 50px; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
-        .loading-text { margin-top: 20px; font-size: 15px; color: #555; font-weight: bold; }
+        .css-heart {
+            position: relative; width: 50px; height: 45px;
+            background: var(--kewi-pink); border-radius: 50% 50% 0 0;
+            transform: rotate(-45deg); animation: pulse 1.2s infinite;
+        }
+        .css-heart:before, .css-heart:after {
+            content: ""; position: absolute; width: 50px; height: 45px;
+            background: var(--kewi-pink); border-radius: 50%;
+        }
+        .css-heart:before { top: -25px; left: 0; }
+        .css-heart:after { left: 25px; top: 0; }
+        @keyframes pulse { 0%, 100% { transform: rotate(-45deg) scale(1); } 50% { transform: rotate(-45deg) scale(1.2); } }
+        
+        .loader-text { margin-top: 40px; font-size: 15px; color: #555; font-weight: bold; }
 
         /* 主介面 */
+        #main-content { opacity: 0; transition: opacity 0.5s; }
         .header { background: linear-gradient(135deg, var(--line-green), #05a346); padding: 30px 20px; text-align: center; color: white; border-bottom-left-radius: 30px; border-bottom-right-radius: 30px; }
-        .avatar { width: 75px; height: 75px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.3); object-fit: cover; margin-bottom: 8px; }
-        .points-val { font-size: 50px; font-weight: 800; margin: 5px 0; }
+        .avatar { width: 70px; height: 70px; border-radius: 50%; border: 2px solid #fff; object-fit: cover; margin-bottom: 5px; background: #eee; }
+        .points-val { font-size: 48px; font-weight: 800; margin: 5px 0; }
         
-        .container { max-width: 450px; margin: -25px auto 40px; padding: 0 15px; overflow-y: auto; }
-        .card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .container { max-width: 450px; margin: -25px auto 40px; padding: 0 15px; }
+        .card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 15px; }
         .status-box { font-size: 13px; color: #666; margin-bottom: 12px; padding: 10px; background: #e8f5e9; border-radius: 10px; text-align: center; font-weight: bold; }
-        .btn-main { background: #333; color: white; border: none; padding: 16px; width: 100%; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        .btn-main:disabled { background: #ccc; }
+        
+        .btn-main { background: #333; color: white; border: none; padding: 15px; width: 100%; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
         .btn-submit { background: var(--line-green); margin-top: 10px; display: none; }
         #preview { width: 100%; border-radius: 15px; margin-top: 15px; display: none; }
+
         .rewards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
         .reward-card { background: #fff; border: 1px solid #eee; border-radius: 15px; padding: 10px; text-align: center; }
-        .reward-name { font-size: 11px; height: 30px; overflow: hidden; font-weight: bold; margin-bottom: 6px; line-height: 1.2; display: flex; align-items: center; justify-content: center; }
-        .reward-img { width: 100%; aspect-ratio: 1 / 1; border-radius: 10px; object-fit: cover; margin-bottom: 8px; background: #f9f9f9; }
+        .reward-name { font-size: 11px; height: 32px; overflow: hidden; font-weight: bold; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; }
+        .reward-img-container { width: 100%; aspect-ratio: 1 / 1; border-radius: 10px; overflow: hidden; background: #f9f9f9; margin-bottom: 8px; }
+        .reward-img { width: 100%; height: 100%; object-fit: cover; }
+        
         .progress-info { display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 4px; font-weight: bold; color: #444; }
         .progress-bg { background: #eee; height: 7px; border-radius: 4px; overflow: hidden; }
-        .progress-fill { background: var(--line-green); height: 100%; width: 0%; transition: width 0.6s ease; }
+        .progress-fill { background: var(--line-green); height: 100%; width: 0%; transition: width 0.6s; }
     </style>
 </head>
 <body>
 
 <div id="loading-screen">
-    <i class="fas fa-heart loader-heart"></i>
-    <div class="loading-text" id="ld-text">正在召喚葵粉...</div>
+    <div class="css-heart"></div>
+    <div class="loader-text">正在召喚葵粉...</div>
 </div>
 
-<div id="app-body" style="visibility: hidden;">
+<div id="main-content">
     <div class="header">
         <img id="user-avatar" class="avatar" src="">
         <div id="user-name">載入中...</div>
@@ -64,15 +79,16 @@
 
     <div class="container">
         <div class="card" style="text-align:center;">
-            <div id="status" class="status-box">準備中...</div>
+            <div id="status" class="status-box">AI 引擎準備中...</div>
             <input type="file" id="file-input" accept="image/*" style="display:none">
-            <button id="upload-btn" class="btn-main" onclick="document.getElementById('file-input').click()" disabled>系統載入中</button>
+            <button id="upload-btn" class="btn-main" onclick="document.getElementById('file-input').click()" disabled>載入中</button>
             <img id="preview">
             <button id="submit-btn" class="btn-main btn-submit">確認送出</button>
         </div>
+
         <div class="card">
-            <div style="font-weight:bold; margin-bottom:12px;">VIP集點換好禮</div>
-            <div id="rewards-grid" class="rewards-grid">載入獎品中...</div>
+            <div style="font-weight:bold; margin-bottom:12px;">🎁 VIP集點換好禮</div>
+            <div id="rewards-grid" class="rewards-grid">載入中...</div>
         </div>
     </div>
 </div>
@@ -80,74 +96,48 @@
 <script>
     const LIFF_ID = "2008852092-FWAMmdWd";
     const GAS_URL = "https://script.google.com/macros/s/AKfycbydAUJv9hkMsWFuFNTMoSQ61Md67yE-LyjTh4bg8U97NPgyG2ZvkdY_flflAcBxd4ol/exec";
-    
-    let userId = "", userName = "", worker = null, currentPoints = 0;
+    let worker = null, userId = "", userName = "", currentPoints = 0;
 
-    // 啟動保護：如果 7 秒沒反應，強行關閉載入畫面
-    const safetyTimer = setTimeout(() => {
-        closeLoading("連線稍慢，請稍候...");
-    }, 7000);
+    // 啟動保護：無論如何，5秒後強行展示畫面
+    setTimeout(showUI, 5000);
 
-    function closeLoading(msg) {
+    function showUI() {
         document.getElementById("loading-screen").style.display = "none";
-        document.getElementById("app-body").style.visibility = "visible";
-        document.body.style.overflow = "auto";
-        if(msg) console.log(msg);
+        document.getElementById("main-content").style.opacity = "1";
     }
 
-    // 第一階段：只跑 LIFF 認證
-    liff.init({ liffId: LIFF_ID }).then(() => {
-        if (!liff.isLoggedIn()) {
-            liff.login();
-        } else {
-            liff.getProfile().then(profile => {
-                clearTimeout(safetyTimer); // 成功連線，取消保護計時
-                userId = profile.userId;
-                userName = profile.displayName;
-                document.getElementById("user-name").innerText = userName;
-                document.getElementById("user-avatar").src = profile.pictureUrl || "";
-                
-                // 認證成功立刻開門
-                closeLoading();
+    async function initSystem() {
+        try {
+            await liff.init({ liffId: LIFF_ID });
+            if (!liff.isLoggedIn()) { liff.login(); return; }
 
-                // 第二階段：進入網頁後才載入其他重量級資源
-                startBackgroundTasks();
-            });
+            const profile = await liff.getProfile();
+            userId = profile.userId;
+            userName = profile.displayName;
+            document.getElementById("user-name").innerText = userName;
+            document.getElementById("user-avatar").src = profile.pictureUrl || "";
+
+            showUI(); // 成功取得身分，開門！
+            fetchData();
+            initAI();
+        } catch (err) {
+            console.error(err);
+            showUI();
         }
-    }).catch(err => {
-        console.error(err);
-        closeLoading("LINE 初始化失敗");
-    });
-
-    function startBackgroundTasks() {
-        // 抓點數
-        fetchData();
-        // 載入 FontAwesome 與 Tesseract
-        loadExternalScripts();
-    }
-
-    async function loadExternalScripts() {
-        const fa = document.createElement('link');
-        fa.rel = 'stylesheet'; fa.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
-        document.head.appendChild(fa);
-
-        const ts = document.createElement('script');
-        ts.src = 'https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js';
-        ts.onload = initAI;
-        document.body.appendChild(ts);
     }
 
     async function initAI() {
-        document.getElementById("status").innerText = "正在啟動 AI 引擎...";
-        worker = Tesseract.createWorker({
-            logger: m => { if(m.status === 'recognizing') document.getElementById("status").innerText = `辨識中: ${Math.round(m.progress * 100)}%`; }
-        });
-        await worker.load();
-        await worker.loadLanguage('chi_tra');
-        await worker.initialize('chi_tra');
-        document.getElementById("upload-btn").disabled = false;
-        document.getElementById("upload-btn").innerText = "選取照片";
-        document.getElementById("status").innerText = "系統就緒";
+        try {
+            worker = await Tesseract.createWorker({
+                logger: m => { if(m.status === 'recognizing') document.getElementById("status").innerText = `辨識中: ${Math.round(m.progress * 100)}%`; }
+            });
+            await worker.loadLanguage('chi_tra');
+            await worker.initialize('chi_tra');
+            await worker.setParameters({ tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK });
+            document.getElementById("upload-btn").disabled = false;
+            document.getElementById("upload-btn").innerText = "選取照片";
+            document.getElementById("status").innerText = "準備就緒，請上傳截圖";
+        } catch (e) { document.getElementById("status").innerText = "引擎初始化稍慢"; }
     }
 
     async function fetchData() {
@@ -163,15 +153,16 @@
                 grid.innerHTML += `
                     <div class="reward-card">
                         <div class="reward-name">${r.name}</div>
-                        <img src="${r.image || 'https://via.placeholder.com/150'}" class="reward-img">
+                        <div class="reward-img-container"><img src="${r.image || 'https://via.placeholder.com/150'}" class="reward-img"></div>
                         <div class="progress-info"><span>${currentPoints}點</span><span>目標${r.required}</span></div>
                         <div class="progress-bg"><div class="progress-fill" style="width:${p}%"></div></div>
                     </div>`;
             });
-        } catch (e) { console.log("Data Fail"); }
+        } catch (e) { console.error("Data error"); }
     }
 
     document.getElementById('file-input').onchange = (e) => {
+        if (!e.target.files[0]) return;
         const reader = new FileReader();
         reader.onload = (ev) => {
             document.getElementById('preview').src = ev.target.result;
@@ -182,20 +173,20 @@
     };
 
     document.getElementById('submit-btn').onclick = async function() {
-        this.disabled = true; this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 辨識中...';
+        this.disabled = true; this.innerText = "辨識中...";
         const img = new Image(); img.src = document.getElementById('preview').src;
         await img.decode();
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         let w = img.width; if (w > 1100) w = 1100;
         let h = img.height * (w / img.width);
-        const scale = 3.5, cw = w * 0.55;
+        const scale = 3.2, cw = w * 0.55;
         canvas.width = cw * scale; canvas.height = h * scale;
         ctx.imageSmoothingEnabled = false;
         ctx.drawImage(img, img.width * 0.45, 0, img.width * 0.55, img.height, 0, 0, canvas.width, canvas.height);
         let id = ctx.getImageData(0, 0, canvas.width, canvas.height);
         for (let i = 0; i < id.data.length; i += 4) {
-            let v = (id.data[i] + id.data[i+1] + id.data[i+2]) / 3 < 145 ? 0 : 255;
+            let v = (id.data[i] + id.data[i+1] + id.data[i+2]) / 3 < 150 ? 0 : 255;
             id.data[i] = id.data[i+1] = id.data[i+2] = v;
         }
         ctx.putImageData(id, 0, 0);
@@ -207,10 +198,12 @@
             });
             alert(await response.text());
             document.getElementById('preview').style.display = 'none';
-            this.style.display = 'none'; this.disabled = false; this.innerHTML = "確認送出";
+            this.style.display = 'none'; this.disabled = false; this.innerText = "確認送出";
             fetchData();
         } catch (err) { alert("辨識出錯"); this.disabled = false; }
     };
+
+    initSystem();
 </script>
 </body>
 </html>
