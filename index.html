@@ -65,10 +65,10 @@
     </div>
     <div class="container">
         <div class="card">
-            <div style="font-weight:bold; margin-bottom:10px; font-size:15px; text-align:left;"><i class="fas fa-check-square"></i> 1. 勾選今日打卡商品</div>
+            <div style="font-weight:bold; margin-bottom:10px; font-size:15px; text-align:left;"><i class="fas fa-check-square"></i> 1. 勾選今日打卡商品(可滑動,可複選)</div>
             <div id="product-grid" class="product-grid">載入中...</div>
             
-            <div style="font-weight:bold; margin-bottom:10px; margin-top:20px; font-size:15px; text-align:left;"><i class="fas fa-image"></i> 2. 上傳截圖證據</div>
+            <div style="font-weight:bold; margin-bottom:10px; margin-top:20px; font-size:15px; text-align:left;"><i class="fas fa-image"></i> 2. 上傳打卡圖</div>
             <input type="file" id="file-input" accept="image/*" style="display:none">
             <button id="upload-btn" class="btn-main" onclick="document.getElementById('file-input').click()">📸 選取照片</button>
             <img id="preview">
@@ -145,7 +145,7 @@
         if (selected.length === 0) { alert("請至少勾選一個商品！"); return; }
         
         const btn = document.getElementById("submit-btn");
-        btn.disabled = true; btn.innerText = "上傳中...";
+        btn.disabled = true; btn.innerText = "辨識中...";
 
         const img = new Image();
         img.src = document.getElementById('preview').src;
