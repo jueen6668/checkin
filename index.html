@@ -129,11 +129,11 @@
     function compressImage(img) {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        const maxW = 800;
+        const maxW = 600;
         const scale = maxW / img.width;
         canvas.width = maxW; canvas.height = img.height * scale;
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        return canvas.toDataURL('image/jpeg', 0.6); // 降低一點品質以應對多圖傳輸
+        return canvas.toDataURL('image/jpeg', 0.4); // 降低一點品質以應對多圖傳輸
     }
 
     async function handleSubmit() {
